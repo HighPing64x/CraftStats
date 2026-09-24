@@ -1,0 +1,10 @@
+D:\.C#\CraftStats\obj-uptime-fix\Debug\net10.0-windows\MainWindow.baml
+D:\.C#\CraftStats\obj-uptime-fix\Debug\net10.0-windows\App.baml
+D:\.C#\CraftStats\obj-uptime-fix\Debug\net10.0-windows\MainWindow.g.cs
+D:\.C#\CraftStats\obj-uptime-fix\Debug\net10.0-windows\App.g.cs
+D:\.C#\CraftStats\obj-uptime-fix\Debug\net10.0-windows\CraftStats_MarkupCompile.cache
+D:\.C#\CraftStats\obj-uptime-fix\Debug\net10.0-windows\CraftStats.g.resources
+D:\.C#\CraftStats\obj-uptime-fix\Debug\net10.0-windows\CraftStats.GeneratedMSBuildEditorConfig.editorconfig
+D:\.C#\CraftStats\obj-uptime-fix\Debug\net10.0-windows\CraftStats.AssemblyInfoInputs.cache
+D:\.C#\CraftStats\obj-uptime-fix\Debug\net10.0-windows\CraftStats.AssemblyInfo.cs
+D:\.C#\CraftStats\obj-uptime-fix\Debug\net10.0-windows\CraftStats.csproj.CoreCompileInputs.cache

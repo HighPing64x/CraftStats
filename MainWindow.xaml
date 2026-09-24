@@ -1,0 +1,231 @@
+<Window x:Class="CraftStats.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:CraftStats"
+        Title="CraftStats"
+        Width="1280"
+        Height="820"
+        MinWidth="980"
+        MinHeight="620"
+        Icon="CraftStats.png"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="CanResize">
+    <Window.Resources>
+        <SolidColorBrush x:Key="NeutralPanelBrush" Color="#808080" Opacity="0.08" />
+        <SolidColorBrush x:Key="NeutralRowBrush" Color="#808080" Opacity="0.10" />
+        <SolidColorBrush x:Key="NeutralSelectedBrush" Color="#808080" Opacity="0.20" />
+        <SolidColorBrush x:Key="SubtleBorderBrush"
+                         Color="{DynamicResource {x:Static SystemColors.GrayTextColorKey}}"
+                         Opacity="0.32" />
+    </Window.Resources>
+
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <StackPanel>
+                <TextBlock Text="CraftStats" FontSize="30" FontWeight="SemiBold" />
+                <TextBlock Text="{Binding Dashboard.Status}" Margin="0,6,0,0" />
+                <TextBlock Text="{Binding Dashboard.CurrentWindow}" Margin="0,4,0,0" TextTrimming="CharacterEllipsis" />
+            </StackPanel>
+
+            <StackPanel Grid.Column="1" HorizontalAlignment="Right" MaxWidth="460">
+                <TextBlock Text="{Binding Dashboard.CurrentProfile}" FontWeight="SemiBold" HorizontalAlignment="Right" />
+                <TextBlock Text="{Binding Dashboard.TopProcess}" Margin="0,6,0,0" HorizontalAlignment="Right" TextTrimming="CharacterEllipsis" />
+                <TextBlock Text="{Binding Dashboard.LongestProcess}" Margin="0,4,0,0" HorizontalAlignment="Right" TextTrimming="CharacterEllipsis" />
+            </StackPanel>
+        </Grid>
+
+        <Border Grid.Row="1"
+                Margin="0,14,0,14"
+                Padding="8"
+                CornerRadius="10"
+                Background="{StaticResource NeutralPanelBrush}"
+                BorderBrush="{StaticResource SubtleBorderBrush}"
+                BorderThickness="1">
+            <WrapPanel>
+                <Button Content="保存" Click="Save_Click" Margin="0,0,8,0" />
+                <Button Content="导出加密包" Click="Export_Click" Margin="0,0,8,0" />
+                <Button Content="导入加密包" Click="Import_Click" Margin="0,0,8,0" />
+                <Button Content="归零统计" Click="Reset_Click" Margin="0,0,8,0" />
+                <Button Content="重新加载" Click="Reload_Click" />
+            </WrapPanel>
+        </Border>
+
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*" />
+                <ColumnDefinition Width="14" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <GroupBox Header="统计面板">
+                <DockPanel Margin="10">
+                    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,0,10">
+                        <TextBlock Text="排序" VerticalAlignment="Center" Margin="0,0,8,0" />
+                        <ComboBox x:Name="StatsSortCombo" Width="168" SelectionChanged="StatSortChanged">
+                            <ComboBoxItem Content="按数值从大到小" Tag="ValueDescending" />
+                            <ComboBoxItem Content="按名称首字母" Tag="NameAscending" />
+                        </ComboBox>
+                    </StackPanel>
+
+                    <ListView x:Name="StatsListView"
+                              ItemsSource="{Binding Stats}"
+                              AlternationCount="2"
+                              ScrollViewer.CanContentScroll="True"
+                              VirtualizingPanel.IsVirtualizing="True"
+                              VirtualizingPanel.VirtualizationMode="Recycling">
+                        <ListView.ItemContainerStyle>
+                            <Style TargetType="ListViewItem">
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                <Setter Property="Padding" Value="4,2" />
+                                <Style.Triggers>
+                                    <Trigger Property="ItemsControl.AlternationIndex" Value="1">
+                                        <Setter Property="Background" Value="{StaticResource NeutralRowBrush}" />
+                                    </Trigger>
+                                    <Trigger Property="IsSelected" Value="True">
+                                        <Setter Property="Background" Value="{StaticResource NeutralSelectedBrush}" />
+                                        <Setter Property="BorderBrush" Value="{StaticResource SubtleBorderBrush}" />
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ListView.ItemContainerStyle>
+                        <ListView.View>
+                            <GridView>
+                                <GridViewColumn Header="项目" DisplayMemberBinding="{Binding Name}" Width="420" />
+                                <GridViewColumn Header="数值" DisplayMemberBinding="{Binding DisplayValue}" Width="180" />
+                            </GridView>
+                        </ListView.View>
+                    </ListView>
+                </DockPanel>
+            </GroupBox>
+
+            <GridSplitter Grid.Column="1"
+                          Width="6"
+                          HorizontalAlignment="Center"
+                          VerticalAlignment="Stretch" />
+
+            <TabControl Grid.Column="2" x:Name="DashboardTabs" SelectionChanged="DashboardTabs_SelectionChanged">
+                <TabItem x:Name="ChartTab" Header="图表">
+                    <Grid Margin="12">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+
+                        <DockPanel LastChildFill="False">
+                            <TextBlock x:Name="ChartSummary"
+                                       VerticalAlignment="Center"
+                                       FontWeight="SemiBold"
+                                       TextTrimming="CharacterEllipsis" />
+                            <ComboBox DockPanel.Dock="Right"
+                                      x:Name="ChartRangeCombo"
+                                      Width="130"
+                                      VerticalAlignment="Center"
+                                      SelectionChanged="ChartRangeChanged">
+                                <ComboBoxItem Content="最近 7 天" Tag="7" />
+                                <ComboBoxItem Content="最近 14 天" Tag="14" />
+                                <ComboBoxItem Content="最近 30 天" Tag="30" />
+                            </ComboBox>
+                        </DockPanel>
+
+                        <Border Grid.Row="1"
+                                Margin="0,10,0,0"
+                                Padding="6"
+                                CornerRadius="10"
+                                Background="{StaticResource NeutralPanelBrush}"
+                                BorderBrush="{StaticResource SubtleBorderBrush}"
+                                BorderThickness="1">
+                            <local:DailyUptimeChart x:Name="UptimeChart" Margin="4" />
+                        </Border>
+                    </Grid>
+                </TabItem>
+
+                <TabItem Header="设置">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel Margin="12">
+                            <GroupBox Header="外观">
+                                <StackPanel Margin="10">
+                                    <TextBlock Text="软件亮暗色" />
+                                    <ComboBox SelectedValue="{Binding Settings.ThemePreference}" SelectedValuePath="Tag" SelectionChanged="PrefsChanged" Margin="0,4,0,0">
+                                        <ComboBoxItem Content="追随系统" Tag="System" />
+                                        <ComboBoxItem Content="亮色" Tag="Light" />
+                                        <ComboBoxItem Content="暗色" Tag="Dark" />
+                                    </ComboBox>
+
+                                    <TextBlock Text="关闭按钮行为" Margin="0,12,0,0" />
+                                    <ComboBox SelectedValue="{Binding Settings.CloseBehavior}" SelectedValuePath="Tag" SelectionChanged="PrefsChanged" Margin="0,4,0,0">
+                                        <ComboBoxItem Content="首次询问" Tag="Ask" />
+                                        <ComboBoxItem Content="最小化到托盘" Tag="MinimizeToTray" />
+                                        <ComboBoxItem Content="关闭界面并继续后台统计" Tag="Exit" />
+                                    </ComboBox>
+                                </StackPanel>
+                            </GroupBox>
+
+                            <GroupBox Header="保存" Margin="0,12,0,0">
+                                <StackPanel Margin="10">
+                                    <TextBlock Text="保存模式" />
+                                    <ComboBox SelectedValue="{Binding Settings.SaveMode}" SelectedValuePath="Tag" SelectionChanged="PrefsChanged" Margin="0,4,0,12">
+                                        <ComboBoxItem Content="实时保存" Tag="Realtime" />
+                                        <ComboBoxItem Content="间隔保存" Tag="Interval" />
+                                        <ComboBoxItem Content="仅休眠/关机保存" Tag="OnSuspendOrShutdown" />
+                                    </ComboBox>
+
+                                    <TextBlock Text="间隔秒数（5-3600）" />
+                                    <TextBox Text="{Binding Settings.SaveIntervalSeconds, UpdateSourceTrigger=PropertyChanged}" Margin="0,4,0,0" />
+                                </StackPanel>
+                            </GroupBox>
+
+                            <GroupBox Header="键盘与鼠标" Margin="0,12,0,0">
+                                <StackPanel Margin="10">
+                                    <CheckBox Content="记录键盘按键次数" IsChecked="{Binding Settings.CollectKeyboardKeys}" Checked="PrefsChanged" Unchecked="PrefsChanged" />
+                                    <CheckBox Content="记录全部按键（关闭时只记录字母/数字）" IsChecked="{Binding Settings.CollectAllKeyboardKeys}" Checked="PrefsChanged" Unchecked="PrefsChanged" />
+                                    <CheckBox Content="记录鼠标左键" IsChecked="{Binding Settings.CollectMouseLeftButton}" Checked="PrefsChanged" Unchecked="PrefsChanged" />
+                                    <CheckBox Content="记录鼠标右键" IsChecked="{Binding Settings.CollectMouseRightButton}" Checked="PrefsChanged" Unchecked="PrefsChanged" />
+                                    <CheckBox Content="记录鼠标中键" IsChecked="{Binding Settings.CollectMouseMiddleButton}" Checked="PrefsChanged" Unchecked="PrefsChanged" />
+                                </StackPanel>
+                            </GroupBox>
+
+                            <GroupBox Header="窗口、进程与系统" Margin="0,12,0,0">
+                                <StackPanel Margin="10">
+                                    <CheckBox Content="开机自启" IsChecked="{Binding Settings.StartWithWindows}" Checked="StartupChanged" Unchecked="StartupChanged" />
+                                    <CheckBox Content="开机自启时最小化到托盘" IsChecked="{Binding Settings.StartMinimizedToTray}" Checked="StartupChanged" Unchecked="StartupChanged" Margin="0,6,0,0" />
+                                    <CheckBox Content="记录窗口标题" IsChecked="{Binding Settings.CollectWindowTitles}" Checked="PrefsChanged" Unchecked="PrefsChanged" />
+                                    <CheckBox Content="记录进程名" IsChecked="{Binding Settings.CollectProcessNames}" Checked="PrefsChanged" Unchecked="PrefsChanged" />
+                                    <CheckBox Content="记录网络统计（关闭后不显示相关条目）" IsChecked="{Binding Settings.CollectNetworkStats}" Checked="PrefsChanged" Unchecked="PrefsChanged" />
+                                    <CheckBox Content="记录文件统计（关闭后不显示相关条目）" IsChecked="{Binding Settings.CollectFileStats}" Checked="PrefsChanged" Unchecked="PrefsChanged" />
+                                </StackPanel>
+                            </GroupBox>
+                        </StackPanel>
+                    </ScrollViewer>
+                </TabItem>
+
+                <TabItem Header="数据">
+                    <StackPanel Margin="12">
+                        <GroupBox Header="数据管理">
+                            <StackPanel Margin="10">
+                                <Button Content="立即保存" Click="Save_Click" HorizontalAlignment="Stretch" />
+                                <Button Content="导出加密 .craftstats" Click="Export_Click" HorizontalAlignment="Stretch" Margin="0,8,0,0" />
+                                <Button Content="导入加密 .craftstats" Click="Import_Click" HorizontalAlignment="Stretch" Margin="0,8,0,0" />
+                                <Button Content="归零所有统计" Click="Reset_Click" HorizontalAlignment="Stretch" Margin="0,8,0,0" />
+                            </StackPanel>
+                        </GroupBox>
+
+                        <TextBlock Margin="0,12,0,0"
+                                   TextWrapping="Wrap"
+                                   Text="导出文件会加密保存；界面中可关闭窗口标题、进程名、文件和网络统计来减少隐私信息。" />
+                    </StackPanel>
+                </TabItem>
+            </TabControl>
+        </Grid>
+    </Grid>
+</Window>
