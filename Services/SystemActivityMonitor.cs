@@ -65,6 +65,9 @@ public sealed class SystemActivityMonitor
         var delta = _lastSweep == DateTimeOffset.MinValue ? TimeSpan.Zero : now - _lastSweep;
         _lastSweep = now;
         var liveIds = new HashSet<int>();
+        // multiple same-name processes share one ProcessRuntimeState; credit the sweep delta
+        // only once per distinct process name so running times are not multiplied by instance count
+        var creditedThisSweep = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         foreach (var process in Process.GetProcesses())
         {
@@ -82,7 +85,8 @@ public sealed class SystemActivityMonitor
                         runtime.LaunchCount++;
                         _queueCounter($"进程启动：{name}", 1);
                     }
-                    runtime.TotalRunningTime += delta;
+                    if (creditedThisSweep.Add(name))
+                        runtime.TotalRunningTime += delta;
                     runtime.LastSeenAt = now;
                 }
                 catch

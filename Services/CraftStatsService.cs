@@ -154,6 +154,7 @@ public sealed class CraftStatsService : IDisposable
         GetOrAddCounter("总计开机时长").Duration = totalRunningTime;
         var count = Math.Max(1, GetOrAddCounter("开机次数").Count);
         GetOrAddCounter("平均每次开机时长").Duration = TimeSpan.FromTicks(totalRunningTime.Ticks / count);
+        GetOrAddCounter("已使用天数").Count = _tracker.GetUsedDayCount();
     }
 
     private void RefreshIdleState()

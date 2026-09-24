@@ -32,10 +32,12 @@ public sealed class SessionTracker
         var sums = new TimeSpan[days];
         var now = DateTimeOffset.Now;
 
-        foreach (var session in _sessions)
+        // merge overlapping sessions first so the same wall-clock time is never
+        // credited twice (a single day can therefore never exceed 24h)
+        foreach (var (startOffset, endOffset) in MergedIntervals(_sessions, now))
         {
-            var start = session.StartedAt.LocalDateTime;
-            var end = (session.EndedAt ?? now).LocalDateTime;
+            var start = startOffset.LocalDateTime;
+            var end = endOffset.LocalDateTime;
             if (end <= start) continue;
 
             var current = start;
@@ -54,6 +56,23 @@ public sealed class SessionTracker
         for (var i = 0; i < days; i++)
             result.Add(new DailyUptimePoint(oldest.AddDays(i), sums[i]));
         return result;
+    }
+
+    /// <summary>Number of distinct calendar days on which the software recorded any activity.</summary>
+    public int GetUsedDayCount()
+    {
+        var dates = new HashSet<DateOnly>();
+        foreach (var (startOffset, endOffset) in MergedIntervals(_sessions, DateTimeOffset.Now))
+        {
+            var current = DateOnly.FromDateTime(startOffset.LocalDateTime);
+            var last = DateOnly.FromDateTime(endOffset.LocalDateTime);
+            while (current <= last)
+            {
+                dates.Add(current);
+                current = current.AddDays(1);
+            }
+        }
+        return dates.Count;
     }
 
     public void LoadFromSnapshot(CraftStatsSnapshot snapshot)
@@ -142,13 +161,40 @@ public sealed class SessionTracker
     private static TimeSpan SumDurations(IEnumerable<SessionRecord> sessions, DateTimeOffset openSessionEnd)
     {
         var total = TimeSpan.Zero;
+        foreach (var (start, end) in MergedIntervals(sessions, openSessionEnd))
+            total += end - start;
+        return total;
+    }
+
+    /// <summary>Projects sessions onto the union of their time ranges, so overlapping
+    /// (double-counted) sessions only contribute once. Intervals are contiguous but not merged
+    /// when they merely touch without overlap.</summary>
+    private static IReadOnlyList<(DateTimeOffset Start, DateTimeOffset End)> MergedIntervals(
+        IEnumerable<SessionRecord> sessions, DateTimeOffset openSessionEnd)
+    {
+        var raw = new List<(DateTimeOffset Start, DateTimeOffset End)>();
         foreach (var session in sessions)
         {
             if (session.StartedAt == default) continue;
             var end = session.EndedAt ?? openSessionEnd;
             if (end <= session.StartedAt) continue;
-            total += end - session.StartedAt;
+            raw.Add((session.StartedAt, end));
         }
-        return total;
+        raw.Sort((a, b) => a.Start.CompareTo(b.Start));
+
+        var merged = new List<(DateTimeOffset Start, DateTimeOffset End)>();
+        foreach (var (start, end) in raw)
+        {
+            if (merged.Count > 0 && start <= merged[^1].End)
+            {
+                if (end > merged[^1].End)
+                    merged[^1] = (merged[^1].Start, end);
+            }
+            else
+            {
+                merged.Add((start, end));
+            }
+        }
+        return merged;
     }
 }
